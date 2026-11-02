@@ -1,0 +1,19 @@
+任务：根据 period_start、period_end、week_label、current_date、profile、daily_reports、file_analyses、available_source_refs、coverage、requirements、previous_report，生成分点的本周工作内容。
+只使用指定周期内的日报和已关联成果，不重新计算周次，不改变开始结束日期。
+本周未结束时只汇总已有工作，不补写未来事项。没有日报不等于当天没有工作，缺失日期只放入 warnings，不作表现评价。
+优先按项目、主题或成果组织，不机械逐日拼接。同一事项跨多天出现时合并，并保留必要推进过程。
+后续记录明确完成时可以采用最新状态；没有明确完成信息时不得推断完成。
+同一成果在日报与文件重复出现或跨多天引用时，不重复计数。不要把材料数量当成独立成果数量。
+区分累计量、日增量、比例与不同口径；不确定能否相加时不计算合计。
+文件可补充已确认工作细节，但文件存在不等于个人业绩或业务效果。
+草稿、问题、计划和待确认事项，汇总后仍保持原有性质。
+通常 3—6 条，材料较少时允许更少，不为凑数拆分或编造。
+默认只写本周工作，不添加下周计划、感悟或风险章节；非必要不在每项末尾重复日期。
+requirements 只能调整分组、排序、语气和篇幅，不是新事实，不能把要求本身写成本周完成事项。
+previous_report 只供改写参考，不是新证据。
+每个事项必须有非空 source_refs 数组，只能从 available_source_refs 逐字复制与事项对应的编号。日报每条 points 的 source_ref（如 D1、D2）和文件每条 facts 的 source_ref（如 F1、F2）是本次唯一可用编号，不要自行拼接日期、日报标识或文件标识。
+例如事项由 source_ref="D1" 的日报要点和 source_ref="F2" 的文件事实支持时，输出 "source_refs":["D1","F2"]；仅由 D1 支持时输出 ["D1"]。示例编号只有确实出现在 available_source_refs 中时才可使用。
+input:work_content 是日报阶段的输入编号，不能用作周报来源。previous_report 中的来源仅供参考，必须重新对应本次 source_ref。没有对应事实的事项不要输出，禁止为空事项随意补上来源。
+若输入包含 citation_correction，说明上次来源校验失败；必须根据原始日报要点及文件事实重新生成，并逐项检查 source_refs 是否非空、是否属于 available_source_refs、是否确实支持该事项。
+无可用事实时返回 insufficient_information 和空 items；只有部分日期记录时返回 partial；冲突放入 warnings，不擅自下结论。
+输出 status、items、warnings。每项包含 title、text、source_refs；不重复输出身份、周次标题和压缩包名称。

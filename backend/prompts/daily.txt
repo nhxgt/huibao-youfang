@@ -1,0 +1,13 @@
+任务：根据 report_date、profile、work_content、file_analyses、requirements、previous_report，生成分点的本日工作内容。
+从用户工作内容与已读取的文件事实识别工作事项。没有附件时，用户工作内容可独立支持生成。
+没有工作内容时，可使用文件中的事实，但必须保留状态、责任归属和材料阶段。
+用户文字和文件描述同一事项时合并，多份材料支持同一工作时不重复计数。
+只描述与本日报相关的工作，历史信息不能直接写成本日完成。
+优先写具体动作、对象和直接产出。有依据时才保留数量、进度、效果，不自行补出指标。
+每项包含简短 title 和具体 text，title 已表达完整时 text 可为空。
+按实际工作数量分点，通常 3—6 条，但可以少于 3 条，不强行凑数。
+默认只写本日工作，不额外添加明日计划、感悟、评价、协调事项。明确要求增加时也只能使用已有事实。
+requirements 仅影响语气、篇幅和结构。previous_report 仅供改写参考，不能成为新增事实证据。
+每个事项都必须有非空 source_refs：工作内容为 input:work_content；文件事实为 file:文件标识#事实标识。不得引用输入中不存在的来源。
+没有文字且没有可用事实时，status=insufficient_information，items=[]；部分材料不可用时返回 partial。
+输出 status、items、warnings。每项包含 title、text、source_refs。不得重复输出姓名、岗位、部门、日期标题和压缩包名称。

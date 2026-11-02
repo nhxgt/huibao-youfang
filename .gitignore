@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+*.py[cod]
+data/
+.env
+.env.*
+!.env.example
+.pytest_cache/
+*.log
+build/
+dist/
+
+# Local documents and temporary previews
+/output/
+/tmp/
