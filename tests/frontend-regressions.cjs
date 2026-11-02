@@ -114,7 +114,7 @@ const base = process.env.TEST_BASE_URL || 'http://127.0.0.1:8001';
         if (request.url().endsWith('/api/model-settings') && request.method() === 'PUT') writes++;
       });
       await page.locator('#account-trigger').click();
-      await page.locator('[data-open-settings="api"]').click();
+      await page.locator('#account-dropdown [data-open-settings="api"]').click();
       for (const key of ['误填的密钥内容', 'sk-fixture other', '•'.repeat(40), '*'.repeat(40)]) {
         await page.locator('#model-api-key').fill(key);
         await page.locator('#save-settings').click();
@@ -129,7 +129,7 @@ const base = process.env.TEST_BASE_URL || 'http://127.0.0.1:8001';
       await page.locator('#settings-modal').waitFor({ state: 'hidden' });
       assert.equal(writes, 1);
       await page.locator('#account-trigger').click();
-      await page.locator('[data-open-settings="api"]').click();
+      await page.locator('#account-dropdown [data-open-settings="api"]').click();
       assert.equal(await page.locator('#model-api-key').inputValue(), '');
       assert.equal(await page.locator('#model-api-key-error').isHidden(), true);
     });

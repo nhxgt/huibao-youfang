@@ -16,7 +16,7 @@ const base = process.env.TEST_BASE_URL || 'http://127.0.0.1:8001';
     await page.locator('#today-display').filter({ hasText: '2026' }).waitFor();
     assert.match(await page.title(), /汇报有方/);
     await page.locator('#account-trigger').click();
-    await page.locator('[data-open-settings="api"]').click();
+    await page.locator('#account-dropdown [data-open-settings="api"]').click();
     assert.equal(await page.locator('#model-api-key').inputValue(), '');
     const connection = page.waitForResponse(r => r.url().endsWith('/api/model-settings/test'));
     await page.locator('#test-model').click();

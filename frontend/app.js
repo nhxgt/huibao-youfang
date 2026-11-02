@@ -75,6 +75,8 @@
       $('#'+k+'-download').disabled=busy||zipBusy||!fileEntries(k).length;
       if(k==='daily'){$('#upload-drop').disabled=busy;$$('[data-remove]').forEach(b=>b.disabled=busy);}
     }
+    const sourceHint=$('#weekly-source-hint');
+    if(sourceHint)sourceHint.hidden=pending.weekly||weekRecords.length>0;
   }
   function canSwitchPeriod(){
     if(!operationBusy())return true;
@@ -213,6 +215,8 @@
     if(operationBusy()||pending[k]||!validate(k))return;
     const notes=$('#'+k+'-notes').value.trim(),day=k==='daily'?selectedDate:selectedWeekDate;
     if(k==='daily'&&!dailyFiles.length&&!notes){$('#daily-error').textContent='请填写工作内容或上传至少一份成果文件。';$('#daily-error').hidden=false;$('#daily-notes').focus();return;}
+    if(k==='weekly'&&!weekRecords.length){$('#weekly-error').textContent='本周还没有已保存的日报，请先保存日报。';$('#weekly-error').hidden=false;return;}
+    if(!modelConfig.configured){openSettings('api');message('请先配置模型服务，保存后再生成汇报。',true);return;}
     const oldStatus=previewStatus[k];
     $('#'+k+'-error').hidden=true;loading[k]=true;$('#'+k+'-generate').disabled=true;$('#'+k+'-generate').setAttribute('aria-busy','true');$('#'+k+'-loading').hidden=false;$('#'+k+'-paper-content').hidden=true;$('#'+k+'-empty').hidden=true;previewStatus[k]='正在调用模型';updatePackage(k);
     try{
@@ -400,6 +404,14 @@
     const side=$('.side-user>span');side.replaceChildren(document.createTextNode(userProfile.name||'未填写姓名'));const small=document.createElement('small');small.textContent=[userProfile.role,userProfile.dept].filter(Boolean).join(' · ')||'完善个人信息';side.append(small);
     $('#menu-name').textContent=userProfile.name||'未填写姓名';$('#menu-profile').textContent=[userProfile.role,userProfile.dept].filter(Boolean).join(' · ')||'完善个人信息';
     $('#api-menu-status').textContent=modelConfig.name&&modelConfig.baseUrl?(modelConfig.hasApiKey?'配置已保存':'待填写 Key'):'未配置';
+    for(const k of ['daily','weekly']){
+      const guidance=$('#'+k+'-setup-guidance');if(!guidance)continue;
+      const needsProfile=!userProfile.name||!userProfile.role,needsModel=!modelConfig.configured;
+      guidance.hidden=!needsProfile&&!needsModel;
+      const label=$('.setup-guidance-label',guidance);label.textContent=needsProfile&&needsModel?'生成汇报前，请完善个人信息并配置模型服务。':needsProfile?'生成汇报前，请完善姓名和岗位。':'生成汇报前，请配置模型服务。';
+      $('[data-setup-mode="profile"]',guidance).hidden=!needsProfile;
+      $('[data-setup-mode="api"]',guidance).hidden=!needsModel;
+    }
   }
   function positionAccount(){
     if(accountDropdown.hidden)return;
@@ -472,7 +484,7 @@
       catch(e){message(e.message,true);}finally{settingsBusy=false;syncSettingsActions();}
     }
   }
-  document.addEventListener('click',e=>{const open=e.target.closest('[data-open-settings]');if(open){openSettings(open.dataset.openSettings);return;}if(e.target.closest('[data-close-settings]')||e.target.hasAttribute('data-settings-mask'))closeSettings();});
+  document.addEventListener('click',e=>{const open=e.target.closest('[data-open-settings],[data-setup-mode]');if(open){openSettings(open.dataset.openSettings||open.dataset.setupMode);return;}if(e.target.closest('[data-close-settings]')||e.target.hasAttribute('data-settings-mask'))closeSettings();});
   $('#save-settings').addEventListener('click',saveSettings);
   for(const id of ['profile-settings','api-settings'])$('#'+id).addEventListener('submit',e=>{e.preventDefault();saveSettings();});
   for(const id of ['profile-name','profile-role','profile-dept','model-name','model-base-url','model-api-key'])$('#'+id).addEventListener('input',()=>setSettingError(id,''));
@@ -496,13 +508,14 @@
     try{
       const bootstrap=await api('/bootstrap');userProfile=bootstrap.profile;modelConfig=adaptModel(bootstrap.model);mergeRecords(bootstrap.reports);syncAccount();updateDates();await loadDay(today);
       route(['daily','weekly','history'].includes(location.hash.slice(1))?location.hash.slice(1):'daily');
-      if(!userProfile.name||!userProfile.role)message('请先点击右上角头像，完善个人信息。');
     }catch(e){message(e.message,true);}
     $('#today-display').textContent=dateText(today)+' · 周'+['日','一','二','三','四','五','六'][new Date().getDay()];
   }
   for(const k of ['daily','weekly']){
     const warning=document.createElement('div');warning.id=k+'-warnings';warning.className='report-warnings';warning.hidden=true;$('.report-paper',$('[data-page-scope="'+k+'"]')).after(warning);
+    const guidance=document.createElement('div');guidance.id=k+'-setup-guidance';guidance.className='setup-guidance';guidance.hidden=true;guidance.innerHTML='<span class="setup-guidance-label"></span> <button type="button" data-setup-mode="profile">完善个人信息</button> <button type="button" data-setup-mode="api">配置模型服务</button>';$('#'+k+'-form').prepend(guidance);
   }
+  const sourceHint=document.createElement('p');sourceHint.id='weekly-source-hint';sourceHint.className='weekly-source-hint';sourceHint.hidden=true;sourceHint.innerHTML='本周还没有已保存的日报，保存日报后即可生成周报。 <button type="button" data-route="daily">去写日报</button>';$('#weekly-generate').closest('.generate-area').before(sourceHint);$('#weekly-generate').setAttribute('aria-describedby','weekly-source-hint');
   const historyMore=document.createElement('button');historyMore.id='history-more';historyMore.className='btn';historyMore.type='button';historyMore.textContent='加载更多汇报';historyMore.hidden=true;historyMore.dataset.antComponent='Button';historyMore.style.marginTop='16px';$('#history-list').after(historyMore);historyMore.onclick=()=>loadHistory(false);
   const testModel=document.createElement('button');testModel.id='test-model';testModel.className='btn';testModel.type='button';testModel.textContent='测试已保存配置';testModel.dataset.antComponent='Button';$('#save-settings').before(testModel);
   const clearModelKey=document.createElement('button');clearModelKey.id='clear-model-key';clearModelKey.className='btn';clearModelKey.type='button';clearModelKey.textContent='清除已保存的 Key';clearModelKey.hidden=true;$('#save-settings').before(clearModelKey);
