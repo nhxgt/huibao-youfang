@@ -1,6 +1,8 @@
-# 汇报有方
+# 汇报有方 V2.0
 
 本机单用户日报 / 周报助手。FastAPI 提供接口和前端页面，SQLite 保存设置、草稿和汇报，本地目录保存原始成果。原型页面已接入后端，正式运行不再生成演示数据。
+
+V2.0 更新了日报、周报、历史和设置界面，增加首次配置引导和小屏布局。完整改动与已知问题见 [更新日志](CHANGELOG.md)。项目仍是本机运行的 Windows 浏览器应用，小屏界面不代表原生 iOS 应用。
 
 ## Windows 分发包
 
@@ -11,7 +13,12 @@
 
 ## 启动
 
-当前工作区已创建虚拟环境、安装依赖，可以直接运行：
+从 GitHub 克隆后的新环境需要 Python 3.12 或以上版本。`.venv` 不包含在仓库中，首次运行请先创建环境并安装依赖：
+
+    python -m venv .venv
+    .\.venv\Scripts\python.exe -m pip install -r requirements.lock.txt
+
+随后启动应用：
 
     .\.venv\Scripts\python.exe run.py
 
@@ -24,18 +31,12 @@
 也可以在 PowerShell 运行 .\start.ps1，通过 .\start.ps1 -Port 8002 更换端口。
 原 HTML 从文件地址打开时会跳转至默认端口 8000；使用其他端口时请直接访问对应 HTTP 地址。
 
-新环境需要 Python 3.12 或以上版本：
-
-    python -m venv .venv
-    .\.venv\Scripts\python.exe -m pip install -r requirements.lock.txt
-    .\.venv\Scripts\python.exe run.py
-
 requirements.txt 声明依赖范围，requirements.lock.txt 锁定本次验证过的完整环境。
 
 ## 首次使用
 
-1. 右上角头像 → 个人信息：填写姓名、岗位，可选部门。
-2. 右上角头像 → 模型 API 设置：填写模型名称、Base URL、API Key。
+1. 在侧栏选择“个人信息”（或通过右上角头像进入），填写姓名、岗位，可选部门。
+2. 在侧栏选择“模型 API 设置”（或通过右上角头像进入），填写模型名称、Base URL、API Key。
 3. 保存后再次打开模型设置，可以点击“测试已保存配置”。该操作会发起一次真实模型请求。
 4. 日报：选择日期，填写工作内容和 / 或上传成果，生成后核对、编辑并保存。
 5. 周报：选择周期，直接关联该周已保存的日报与成果，可填写汇总要求。
@@ -46,6 +47,7 @@ requirements.txt 声明依赖范围，requirements.lock.txt 锁定本次验证�
 模型接口使用 OpenAI 兼容的 POST {Base URL}/chat/completions，要求支持 system/user 消息和非流式文本响应，不绑定某个服务商。
 例如 Base URL 是 https://api.example.com/v1，程序会请求其 /v1/chat/completions。
 需要模型能按提示返回 JSON；图片分析还需要支持 image_url 视觉输入。
+远程模型服务建议使用 HTTPS：HTTP 连接会明文传输 API Key 和发送给模型的工作材料；本机模型服务可按其配置使用本地地址。
 
 没有配置模型、认证失败、超时、输出不是有效 JSON 或证据引用无效时，接口返回明确错误，不使用模拟内容兜底。
 模型结果仍需要人工核对；来源引用校验保证引用存在，不等于能自动判定每句话在语义上完全正确。
@@ -56,7 +58,7 @@ requirements.txt 声明依赖范围，requirements.lock.txt 锁定本次验证�
 - 目录中的 reports.sqlite3 保存个人信息、模型名称 / 地址、文件元数据、分析缓存、日报、周报及草稿。
 - files/ 按随机标识保存原始文件，上传文件名不参与磁盘路径构造；tmp/ 保存下载后自动删除的临时 ZIP。
 - API Key 使用 Windows 当前用户范围的 DPAPI 加密后保存到数据库的独立凭据记录，重启时自动读取。明文不落盘、不从查询接口返回，也不会回填浏览器输入框。
-- 右上角“模型 API 设置”可更换 Key；留空保存保留已配置的 Key；“清除已保存的 Key”会同时清除持久化记录与进程中的 Key，保留模型名称和地址。
+- “模型 API 设置”可从侧栏或右上角头像进入并更换 Key；留空保存保留已配置的 Key；“清除已保存的 Key”会同时清除持久化记录与进程中的 Key，保留模型名称和地址。
 - 加密凭据绑定配置的 Base URL。修改地址仍需填写 Key；凭据损坏或无法在当前账户解密时，界面要求重新填写，不回退为明文存储。
 - 没有已保存凭据时可使用 WORK_REPORT_API_KEY 环境变量；保存模型配置后会加密持久化。清除 Key 后，重启不会重新启用旧环境变量。程序不读取 .env 文件。
 - 可使用 WORK_REPORT_DATA_DIR 指定数据目录，WORK_REPORT_PORT 指定端口。
